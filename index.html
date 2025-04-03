@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.min.js"></script>
+  </head>
+  <body>
+    <main></main>
+
+    <script>
+      const bigger = 3;
+      const dim = 256;
+      let results = [];
+      let equation;
+
+      const operators = ["*", "+", "-", "/", "^", "|", "&"];
+
+      function operator() {
+        return operators[randInt(0, operators.length - 1)];
+      }
+
+      function randInt(min, max) {
+        const minCeiled = Math.ceil(min);
+        const maxFloored = Math.floor(max);
+        return Math.floor(
+          Math.random() * (maxFloored - minCeiled + 1) + minCeiled
+        ); // The maximum is inclusive and the minimum is inclusive
+      }
+
+      function xOrY() {
+        return Math.random() > 0.5 ? "x" : "y";
+      }
+
+      function makeRandomUnit(depth) {
+        if (depth > 10) {
+          //   console.log("maximum depth reached");
+          return Math.random() > 0.4 ? `${xOrY()}` : `${randInt(1, 50)}`;
+        }
+
+        if (Math.random() > 0.5) {
+          return `(${makeRandomUnit(depth + 1)} ${operator()} ${makeRandomUnit(
+            depth + 1
+          )})`;
+        }
+
+        if (depth < 5) {
+          return makeRandomUnit(depth);
+        }
+
+        return `${xOrY()}`;
+      }
+
+      function makeEquation() {
+        const unit = makeRandomUnit(1);
+
+        return `(x,y) => (${unit})`;
+      }
+
+      function calculate(x, y) {
+        // try {
+        //   const result = Math.ceil(((y * x - (x % y)) / ((14 % x) + y)) % 11);
+        const result = Math.ceil(equation(x, y));
+        return result;
+      }
+
+      function setup() {
+        // const counts = [];
+
+        equation = eval(makeEquation());
+        console.log(equation);
+        createCanvas(dim * bigger, dim * bigger);
+
+        for (let x = 1; x <= dim; x++) {
+          for (let y = 1; y <= dim; y++) {
+            const calculationResult = calculate(x, y);
+            // counts.push(calculationResult);
+            const result = {
+              x,
+              y,
+              value: calculate(x, y),
+            };
+            results.push(result);
+          }
+        }
+
+        // console.log("results", results);
+
+        const groups = Object.groupBy(results, (result) => {
+          return result.value.toString();
+        });
+
+        // console.log("groups", groups);
+        const groupsKeys = Object.keys(groups);
+        // console.log("groupsKeys", groupsKeys);
+
+        const topKey = groupsKeys.reduce(
+          (acc, key) => {
+            const entry = { key, count: groups[key].length };
+
+            if (entry.count > acc.count) {
+              return entry;
+            }
+            return acc;
+          },
+          { key: "", count: 0 }
+        );
+
+        console.log("topKey", topKey);
+
+        results = results.map((result) => {
+          return {
+            ...result,
+            on: result.value.toString() === topKey.key.toString(),
+          };
+        });
+
+        console.log("final results", results);
+      }
+
+      function draw() {
+        background(200);
+
+        scale(bigger);
+
+        strokeWeight(0);
+
+        results.forEach(({ x, y, on }) => {
+          fill(on ? 0 : 255);
+          rect(x, y, 2, 2);
+        });
+
+        noFill();
+        stroke(100);
+        strokeWeight(1);
+        rect(0, 0, dim, dim);
+      }
+    </script>
+  </body>
+</html>
